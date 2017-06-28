@@ -5,6 +5,13 @@ module Types
     global_id_field :id
     interfaces [GraphQL::Relay::Node.interface]
 
+    # fields
+    field :isAdmin do
+      type types.Boolean
+      description 'Indicates if the current user is an admin'
+      resolve -> (_obj, _args, ctx) { ctx[:is_admin].present? }
+    end
+
     # entities
     field :chamber do
       type ChamberType
@@ -46,7 +53,17 @@ module Types
       resolve -> (_obj, _args, _ctx) { Hearing.all }
     end
 
-    connection :bills, BillType.connection_type do
+    BillSearchConnectionType = BillType.define_connection do
+      name 'BillSearchConnection'
+
+      field :count do
+        description 'The total number of bills in the search results'
+        type !types.Int
+        resolve -> (obj, _args, _ctx) { obj.nodes.count }
+      end
+    end
+
+    connection :bills, BillSearchConnectionType do
       description 'All bills'
 
       argument :query, types.String, 'Returns bills whose title or summary match the query'
