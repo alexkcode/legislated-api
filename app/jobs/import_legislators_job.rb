@@ -1,24 +1,23 @@
 class ImportLegislatorsJob
   include Worker
 
-  def initialize(redis = Redis.new, service = OpenStatesService.new)
-    @redis = redis
-    @service = service
+  def self.scheduled?
+    Time.current.day == 1
+  end
+
+  def initialize(open_states_service = OpenStatesService.new)
+    @open_states_service = open_states_service
   end
 
   def perform
-    import_date = @redis.get(:import_legislators_job_date)&.to_time
-
-    legislator_attrs = @service
-      .fetch_legislators(fields: fields, updated_since: import_date)
+    legislator_attrs = @open_states_service
+      .fetch_legislators(fields: fields)
       .map { |data| parse_attributes(data) }
       .reject(&:nil?)
 
     legislator_attrs.each do |attrs|
       Legislator.upsert_by!(:os_id, attrs)
     end
-
-    @redis.set(:import_legislators_job_date, Time.zone.now)
   end
 
   private
@@ -26,11 +25,16 @@ class ImportLegislatorsJob
   def parse_attributes(data)
     attrs = {
       os_id: data['leg_id'],
+      active: data['active'],
       first_name: data['first_name'],
       last_name: data['last_name'],
-      email: data['email'],
+      middle_name: data['middle_name'],
+      suffixes: data['suffixes'],
+      party: data['party'],
+      chamber: data['chamber'],
       district: data['district'],
-      chamber: data['chamber']
+      website_url: data['url'],
+      email: data['email']
     }
 
     attrs
@@ -41,13 +45,16 @@ class ImportLegislatorsJob
       fields = %i[
         id
         leg_id
+        active
         first_name
+        middle_name
         last_name
-        email
-        phone_number
-        twitter_username
-        district
+        suffixes
+        party
         chamber
+        district
+        url
+        email
       ]
 
       fields.join(',')
