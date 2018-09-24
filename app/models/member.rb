@@ -1,4 +1,4 @@
 class Member < ApplicationRecord
-    belongs_to :legislators
-    belongs_to :committees
+  belongs_to :legislators
+  belongs_to :committees
 end

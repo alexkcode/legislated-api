@@ -11,7 +11,6 @@ module OpenStates
       parent_id
       committee
       subcommittee
-      chamber
       sources
     ]
 

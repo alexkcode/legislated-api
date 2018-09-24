@@ -33,5 +33,4 @@ class ImportCommittees
   def update_membership
     # update the member relation between committee and legislator
   end
-
 end
